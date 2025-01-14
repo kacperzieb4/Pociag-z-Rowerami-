@@ -1,4 +1,4 @@
-# Pociag-z-Rowerami
+# Pociag z Rowerami
 
 Na dworcu kolejowym stoi pociąg pasażerski o pojemności P pasażerów, w którym jednocześnie
 można przewieźć R rowerów. Do pociągu są dwa wejścia (każde może pomieścić jedną osobę): jedno
