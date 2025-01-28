@@ -1,6 +1,5 @@
 #include "funkcje.h"
 
-
 //Kolejki komunikatow
 int get_message_queue(const char *path, int proj_ID) {
     key_t key = ftok(path, proj_ID);
@@ -28,7 +27,6 @@ void destroy_message_queue(int msq_ID) {
     if (msgctl(msq_ID, IPC_RMID, NULL) == -1) {
         perror("msgctl destroy_message_queue");
     }
-    
 }
 
 int receive_message(int msq_ID, long msgtype, struct message *msg) {

@@ -6,14 +6,16 @@ int block_passengers = 0;  // Flaga blokująca wsiadanie pasażerów
 pid_t passenger_pids[P];  // Tablica przechowująca PIDy pasażerów w pociągu
 int passenger_count = 0;  // Liczba pasażerów w pociągu
 
+
 void sigusr1_handler_kierownik(int sig) {
     force_departure = 1;  // Ustawianie flagi wymuszonego odjazdu
     printf("[KIEROWNIK PID=%d] Otrzymano sygnał wymuszający odjazd.\n", getpid());
 }
 
 void sigusr2_handler_kierownik(int sig) {
-    block_passengers = 1;  // Ustawianie flagi blokującej wsiadanie pasażerów
+    block_passengers = 1; // Ustawianie flagi blokującej wsiadanie pasażerów
     printf("[KIEROWNIK PID=%d] Otrzymano sygnał blokujący wsiadanie pasażerów.\n", getpid());
+
 }
 
 void cleanup_passengers() {
@@ -44,6 +46,7 @@ int main() {
     // Dodatkowy semafor do blokowania wsiadania pasażerów podczas odjazdu
     int boarding_sem = sem_create(".", 7, 1);
     sem_set_value(boarding_sem, 0, 1);  // Początkowo wsiadanie jest dozwolone
+
 
     struct message train_msg;
     train_msg.mtype = 1;  // Typ komunikatu oznaczający chęć wjazdu na stację
@@ -83,32 +86,29 @@ int main() {
                 printf("[KIEROWNIK PID=%d] Wymuszony odjazd! Przerywam wsiadanie pasażerów.\n", train_ID);
                 break;  // Natychmiastowe przerwanie wsiadania pasażerów
             }
-
-            if (block_passengers) {
-                printf("[KIEROWNIK PID=%d] Wsiadanie pasażerów zablokowane.\n", train_ID);
-                break;  // Natychmiastowe przerwanie wsiadania pasażerów
-            }
+            //blokowanie wsiadania pasazerów
+            if (block_passengers == 0){
 
             if (receive_message_no_wait(get_message_queue(".", 0), 1, &msg) == 1) {
                 if (pass_count < P) {
                     printf("[KIEROWNIK] Pasażer PID=%ld zaczyna wsiadać (bez roweru).\n", msg.ktype);
                     sleep(2);
+                    printf("[KIEROWNIK] Pasażer PID=%ld wsiadł (bez roweru).\n", msg.ktype);
                     passenger_pids[passenger_count++] = msg.ktype;
                     pass_count++;
-                    printf("[KIEROWNIK] Pasażer PID=%ld wsiadł (bez roweru).\n", msg.ktype);
                 }
             }
             if (receive_message_no_wait(get_message_queue(".", 1), 1, &msg) == 1) {
                 if (pass_count < P && bike_count < R) {
                     printf("[KIEROWNIK] Pasażer PID=%ld zaczyna wsiadać (z rowerem).\n", msg.ktype);
                     sleep(2);
+                    printf("[KIEROWNIK] Pasażer PID=%ld wsiadł (z rowerem).\n", msg.ktype);
                     passenger_pids[passenger_count++] = msg.ktype;
                     pass_count++;
                     bike_count++;
-                    printf("[KIEROWNIK] Pasażer PID=%ld wsiadł (z rowerem).\n", msg.ktype);
                 }
             }
-            //sleep(1);
+            }
         }
 
         // Blokowanie wsiadania pasażerów przed odjazdem
