@@ -7,7 +7,7 @@ pid_t passenger_pids[P];  // Tablica przechowująca PIDy pasażerów w pociągu
 int passenger_count = 0;  // Liczba pasażerów w pociągu
 
 void sigusr1_handler_kierownik(int sig) {
-    force_departure = 1;  // Ustawianie flagi  odjazdu
+    force_departure = 1;  // Ustawianie flagi wymuszonego odjazdu
     printf("[KIEROWNIK PID=%d] Otrzymano sygnał wymuszający odjazd.\n", getpid());
 }
 
@@ -40,6 +40,10 @@ int main() {
 
     int arriving_train_msq = get_message_queue(".", 2);  // Kolejka komunikatów dla przyjeżdżających pociągów
     int confirmation_msq = get_message_queue(".", 3);    // Kolejka komunikatów dla potwierdzeń
+
+    // Dodatkowy semafor do blokowania wsiadania pasażerów podczas odjazdu
+    int boarding_sem = sem_create(".", 7, 1);
+    sem_set_value(boarding_sem, 0, 1);  // Początkowo wsiadanie jest dozwolone
 
     struct message train_msg;
     train_msg.mtype = 1;  // Typ komunikatu oznaczający chęć wjazdu na stację
@@ -107,6 +111,8 @@ int main() {
             sleep(1);
         }
 
+        // Blokowanie wsiadania pasażerów przed odjazdem
+        sem_wait(boarding_sem, 0);
         printf("[KIEROWNIK PID=%d] **ZAMYKAM DRZWI I ODJEŻDŻAM** (Liczba pasażerów: %d, rowerów: %d)\n", train_ID, pass_count, bike_count);
 
         // Powiadomienie zawiadowcy o odjeździe
@@ -120,6 +126,9 @@ int main() {
         cleanup_passengers();
 
         sleep(TI);  // Symulacja czasu powrotu pociągu
+
+        // Zwolnienie semafora po odjeździe
+        sem_raise(boarding_sem, 0);
 
         force_departure = 0;  // Resetowanie flagi wymuszonego odjazdu
         block_passengers = 0; // Resetowanie flagi blokującej wsiadanie pasażerów
