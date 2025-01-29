@@ -68,19 +68,6 @@ int sem_create(char* unique_path, int project_name, int nsems) {
     return sem_ID;
 }
 
-int sem_create_once(char* unique_path, int project_name, int nsems) {
-    key_t key = ftok(unique_path, project_name);
-    if (key == -1) {
-        perror("ftok sem_create_once");
-        exit(1);
-    }
-    int sem_ID = semget(key, nsems, 0666 | IPC_CREAT | IPC_EXCL);
-    if (sem_ID == -1) {
-        return -1;
-    }
-    return sem_ID;
-}
-
 int sem_get(char* unique_path, int project_name, int nsems) {
     key_t key = ftok(unique_path, project_name);
     if (key == -1) {
@@ -91,18 +78,6 @@ int sem_get(char* unique_path, int project_name, int nsems) {
     if (sem_ID == -1) {
         perror("semget sem_get");
         exit(1);
-    }
-    return sem_ID;
-}
-
-int sem_get_return(char* unique_path, int project_name, int nsems) {
-    key_t key = ftok(unique_path, project_name);
-    if (key == -1) {
-        return -1;
-    }
-    int sem_ID = semget(key, nsems, 0666);
-    if (sem_ID == -1) {
-        return -1;
     }
     return sem_ID;
 }
@@ -126,21 +101,6 @@ void sem_wait(int sem_ID, int num) {
     }
 }
 
-int sem_wait_interruptible(int sem_ID, int num) {
-    struct sembuf sops = { num, -1, 0 };
-    while (1) {
-        if (semop(sem_ID, &sops, 1) == -1) {
-            if (errno == EINTR) {
-                return 0;
-            }
-            perror("semop sem_wait_interruptible");
-            exit(1);
-        }
-        break;
-    }
-    return 1;
-}
-
 void sem_raise(int sem_ID, int num) {
     struct sembuf sops = { num, 1, 0 };
     if (semop(sem_ID, &sops, 1) == -1) {
@@ -149,30 +109,6 @@ void sem_raise(int sem_ID, int num) {
     }
 }
 
-void sem_lower_no_wait(int sem_ID, int num) {
-    struct sembuf sops = { num, -1, IPC_NOWAIT };
-    if (semop(sem_ID, &sops, 1) == -1) {
-        perror("semop sem_lower_no_wait");
-        exit(1);
-    }
-}
-
-int sem_exists(char* unique_path, int project_name, int nsems) {
-    key_t key = ftok(unique_path, project_name);
-    if (key == -1) {
-        perror("ftok sem_exists");
-        exit(1);
-    }
-    int sem_ID = semget(key, nsems, 0666);
-    if (sem_ID == -1) {
-        if (errno == ENOENT) {
-            return 0;
-        }
-        perror("semget sem_exists");
-        return -1;
-    }
-    return 1;
-}
 
 void sem_destroy(int sem_ID) {
     if (semctl(sem_ID, 0, IPC_RMID, NULL) == -1) {
@@ -210,36 +146,6 @@ int shared_mem_get(char* unique_path, int project_name) {
     return mem_ID;
 }
 
-int shared_mem_size(int mem_ID) {
-    struct shmid_ds buf;
-    if (shmctl(mem_ID, IPC_STAT, &buf) == -1) {
-        perror("shmctl shared_mem_size");
-        exit(1);
-    }
-    return buf.shm_segsz;
-}
-
-int shared_mem_get_return(char* unique_path, int project_name) {
-    key_t key = ftok(unique_path, project_name);
-    if (key == -1) {
-        return -1;
-    }
-    int mem_ID = shmget(key, 0, 0666);
-    if (mem_ID == -1) {
-        return -1;
-    }
-    return mem_ID;
-}
-
-char* shared_mem_attach_char(int mem_ID) {
-    char* ptr = (char*)shmat(mem_ID, NULL, 0);
-    if (ptr == (char*)-1) {
-        perror("shmat shared_mem_attach_char");
-        exit(1);
-    }
-    return ptr;
-}
-
 int* shared_mem_attach_int(int mem_ID) {
     int* ptr = (int*)shmat(mem_ID, NULL, 0);
     if (ptr == (int*)-1) {
@@ -249,17 +155,11 @@ int* shared_mem_attach_int(int mem_ID) {
     return ptr;
 }
 
-void shared_mem_detach(char *shared_mem) {
-    if (shmdt(shared_mem) == -1) {
-        perror("shmdt shared_mem_detach");
-        exit(1);
-    }
-}
-
 void shared_mem_destroy(int mem_ID) {
     if (shmctl(mem_ID, IPC_RMID, NULL) == -1) {
         perror("shmctl shared_mem_destroy");
         exit(1);
     }
 }
+
 

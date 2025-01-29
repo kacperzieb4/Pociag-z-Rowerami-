@@ -32,25 +32,16 @@ int  receive_message_no_wait(int msq_ID, long msgtype, struct message *msg);
 
 //Semafory
 int  sem_create(char* unique_path, int project_name, int nsems);
-int  sem_create_once(char* unique_path, int project_name, int nsems);
 int  sem_get(char* unique_path, int project_name, int nsems);
-int  sem_get_return(char* unique_path, int project_name, int nsems);
 void sem_set_value(int sem_ID, int num, int value);
 void sem_wait(int sem_ID, int num);
-int  sem_wait_interruptible(int sem_ID, int num);
 void sem_raise(int sem_ID, int num);
-void sem_lower_no_wait(int sem_ID, int num);
-int  sem_exists(char* unique_path, int project_name, int nsems);
 void sem_destroy(int sem_ID);
 
 //Pamiec wspoldzielona
 int   shared_mem_create(char* unique_path, int project_name, size_t size);
 int   shared_mem_get(char* unique_path, int project_name);
-int   shared_mem_size(int mem_ID);
-int   shared_mem_get_return(char* unique_path, int project_name);
-char* shared_mem_attach_char(int mem_ID);
 int*  shared_mem_attach_int(int mem_ID);
-void  shared_mem_detach(char *shared_mem);
 void  shared_mem_destroy(int mem_ID);
 
 #endif
