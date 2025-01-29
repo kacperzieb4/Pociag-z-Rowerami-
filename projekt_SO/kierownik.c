@@ -20,7 +20,7 @@ void sigusr2_handler_kierownik(int sig) {
 }
 
 void sigterm_handler(int sig) {
-    printf("[PID=%d] Otrzymano SIGTERM, kończenie procesu...\n", getpid());
+    printf("[KIEROWNIK PID=%d] Otrzymano SIGTERM, kończenie procesu.\n", getpid());
     exit(0);
 }
 
@@ -46,6 +46,8 @@ int main() {
     setbuf(stdout, NULL);
     signal(SIGUSR1, sigusr1_handler_kierownik);  // Rejestracja sygnału 1
     signal(SIGUSR2, sigusr2_handler_kierownik);  // Rejestracja sygnału 2
+    signal(SIGTERM, sigterm_handler); // Rejestracja sygnału końcowego 
+
 
     pid_t train_ID = getpid();  // PID bieżącego pociągu
     printf("[KIEROWNIK PID=%d] Start pociągu.\n", train_ID);
@@ -59,8 +61,8 @@ int main() {
 
     while (1) {
         // Powiadomienie zawiadowcy o chęci wjazdu na stację
-        send_message(arriving_train_msq, &train_msg);
         printf("[KIEROWNIK PID=%d] Czekam na pozwolenie od zawiadowcy...\n", train_ID);
+        send_message(arriving_train_msq, &train_msg);
 
         // Czekanie na potwierdzenie od zawiadowcy
         struct message confirmation_msg;

@@ -17,7 +17,7 @@ void sigusr2_handler_zawiadowca(int sig) {
     }
 }
 void sigterm_handler(int sig) {
-    printf("[PID=%d] Otrzymano SIGTERM, kończenie procesu...\n", getpid());
+    printf("[ZAWIADOWCA PID=%d] Otrzymano SIGTERM, kończenie procesu.\n", getpid());
     exit(0);
 }
 
@@ -25,6 +25,7 @@ int main() {
     setbuf(stdout, NULL);
     signal(SIGUSR1, sigusr1_handler_zawiadowca);  // Rejestracja sygnału 1
     signal(SIGUSR2, sigusr2_handler_zawiadowca);  // Rejestracja sygnału 2
+    signal(SIGTERM, sigterm_handler); // Rejestracja sygnału końcowego 
 
     printf("[ZAWIADOWCA] Start, PID=%d\n", getpid());
 

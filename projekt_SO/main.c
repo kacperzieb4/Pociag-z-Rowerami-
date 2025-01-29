@@ -77,7 +77,8 @@ int main() {
         }
         sleep(1); 
     }
-
+    
+    sleep(1);
 
     // Uruchomienie procesów pasażerów
     for (int i = 0; i < TP; i++) {

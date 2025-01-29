@@ -60,7 +60,7 @@ int sem_create(char* unique_path, int project_name, int nsems) {
         perror("ftok sem_create");
         exit(1);
     }
-    int sem_ID = semget(key, nsems, 0666 | IPC_CREAT);
+    int sem_ID = semget(key, nsems, 0600 | IPC_CREAT);
     if (sem_ID == -1) {
         perror("semget sem_create");
         exit(1);
@@ -74,7 +74,7 @@ int sem_get(char* unique_path, int project_name, int nsems) {
         perror("ftok sem_get");
         exit(1);
     }
-    int sem_ID = semget(key, nsems, 0666);
+    int sem_ID = semget(key, nsems, 0600);
     if (sem_ID == -1) {
         perror("semget sem_get");
         exit(1);
@@ -124,7 +124,7 @@ int shared_mem_create(char* unique_path, int project_name, size_t size) {
         perror("ftok shared_mem_create");
         exit(1);
     }
-    int mem_ID = shmget(key, size, 0666 | IPC_CREAT);
+    int mem_ID = shmget(key, size, 0600 | IPC_CREAT);
     if (mem_ID == -1) {
         perror("shmget shared_mem_create");
         exit(1);
@@ -138,7 +138,7 @@ int shared_mem_get(char* unique_path, int project_name) {
         perror("ftok shared_mem_get");
         exit(1);
     }
-    int mem_ID = shmget(key, 0, 0666);
+    int mem_ID = shmget(key, 0, 0600);
     if (mem_ID == -1) {
         perror("shmget shared_mem_get");
         exit(1);
