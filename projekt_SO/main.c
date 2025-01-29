@@ -2,7 +2,7 @@
 #include "dane.h"
 
 void cleanup() {
-    printf("\n[MASTER] Sprzątanie zasobów.\n");
+    printf("\033[1;34m[MASTER] Sprzątanie zasobów.\033[0m\n");
 
     system("pkill -SIGTERM kierownik");  // Wysłanie sygnału zakończenia do kierowników
     system("pkill -SIGTERM zawiadowca"); // Wysłanie sygnału zakończenia do zawiadowcy
@@ -20,12 +20,12 @@ void cleanup() {
     //Usuwanie pamięci współdzielonej
     shared_mem_destroy(shared_mem_get(".", 7));
 
-    printf("[MASTER] Wszystkie zasoby zostały usunięte.\n");
+    printf("\033[1;34m[MASTER] Wszystkie zasoby zostały usunięte.\033[0m\n");
     exit(0);
 }
 
 void sigint_handler_main(int sig) {
-    printf("\n[MASTER] SIGINT");
+    printf("\n\033[1;34m[MASTER] SIGINT\033[0m\n");
     cleanup();
 }
 
@@ -33,7 +33,7 @@ int main() {
     setbuf(stdout, NULL);
     signal(SIGINT, sigint_handler_main);  // Rejestracja sygnału SIGINT
     
-    printf("[MASTER] Start programu. Tworzenie procesów...\n");
+    printf("\033[1;34m[MASTER] Start programu. Tworzenie procesów.\033[0m\n");
 
     // Inicjalizacja semaforów
     int platform_sem = sem_create(".", 5, 1);  // Semafor peronu
@@ -54,7 +54,6 @@ int main() {
     int shm_id = shared_mem_create(".", 7, sizeof(int));
     int *killed_passengers = shared_mem_attach_int(shm_id);
     *killed_passengers = 0;  // Inicjalizacja licznika
-    printf("%d",shared_mem_get(".", 7));
 
 
     // Uruchomienie zawiadowcy
@@ -77,7 +76,7 @@ int main() {
         }
         sleep(1); 
     }
-    
+
     sleep(1);
 
     // Uruchomienie procesów pasażerów
@@ -89,12 +88,13 @@ int main() {
             exit(1);
         }
         usleep((rand() % 2000 + 500) * 1000);  // Losowe opóźnienie między pasażerami
+
     }
     
     // Monitorowanie liczby zabitych pasażerów
     while (*killed_passengers < TP) {
         sleep(1);
     }
-    printf("[MASTER] Wszyscy pasazerowie dojechali do stacji końcowej. Kończę program.\n");
+    printf("\033[1;34m[MASTER] Wszyscy pasazerowie dojechali do stacji końcowej. Kończę program.\033[0m\n");
     cleanup();
 }

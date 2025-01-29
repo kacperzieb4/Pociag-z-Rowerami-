@@ -10,17 +10,17 @@ int boarding_in_progress = 0; // Flaga informująca o trwającym wsiadaniu
 
 void sigusr1_handler_kierownik(int sig) {
     force_departure = 1;  // Ustawianie flagi wymuszonego odjazdu
-    printf("[KIEROWNIK PID=%d] Otrzymano sygnał wymuszający odjazd.\n", getpid());
+    printf("\033[1;32m[KIEROWNIK PID=%d] Otrzymano sygnał wymuszający odjazd.\033[0m\n", getpid());
 }
 
 void sigusr2_handler_kierownik(int sig) {
     block_passengers = 1; // Ustawianie flagi blokującej wsiadanie pasażerów
-    printf("[KIEROWNIK PID=%d] Otrzymano sygnał blokujący wsiadanie pasażerów.\n", getpid());
+    printf("\033[1;32m[KIEROWNIK PID=%d] Otrzymano sygnał blokujący wsiadanie pasażerów.\033[0m\n", getpid());
 
 }
 
 void sigterm_handler(int sig) {
-    printf("[KIEROWNIK PID=%d] Otrzymano SIGTERM, kończenie procesu.\n", getpid());
+    printf("\033[1;32m[KIEROWNIK PID=%d] Otrzymano SIGTERM, kończenie procesu.\033[0m\n", getpid());
     exit(0);
 }
 
@@ -32,7 +32,7 @@ void cleanup_passengers() {
         if (passenger_pids[i] > 0) {
             if (kill(passenger_pids[i], SIGKILL) == 0) {
                 (*killed_passengers)++;
-                printf("[KIEROWNIK PID=%d] Pasażer PID=%d dojechał do celu.\n", 
+                printf("\033[;35m[KIEROWNIK PID=%d] Pasażer PID=%d dojechał do celu.\033[0m\n", 
                         getpid(), passenger_pids[i]);
             } else {
                 perror("kill");
@@ -50,7 +50,7 @@ int main() {
 
 
     pid_t train_ID = getpid();  // PID bieżącego pociągu
-    printf("[KIEROWNIK PID=%d] Start pociągu.\n", train_ID);
+    printf("\033[1;32m[KIEROWNIK PID=%d] Start pociągu.\033[0m\n", train_ID);
 
     int arriving_train_msq = get_message_queue(".", 2);  // Kolejka komunikatów dla przyjeżdżających pociągów
     int confirmation_msq = get_message_queue(".", 3);    // Kolejka komunikatów dla potwierdzeń
@@ -61,7 +61,7 @@ int main() {
 
     while (1) {
         // Powiadomienie zawiadowcy o chęci wjazdu na stację
-        printf("[KIEROWNIK PID=%d] Czekam na pozwolenie od zawiadowcy...\n", train_ID);
+        printf("\033[1;32m[KIEROWNIK PID=%d] Czekam na pozwolenie od zawiadowcy...\033[0m\n", train_ID);
         send_message(arriving_train_msq, &train_msg);
 
         // Czekanie na potwierdzenie od zawiadowcy
@@ -81,7 +81,7 @@ int main() {
             continue;
         }
 
-        printf("[KIEROWNIK PID=%d] **WJEŻDŻAM NA STACJĘ I OTWIERAM DRZWI**\n", train_ID);
+        printf("\033[1;32m[KIEROWNIK PID=%d] **WJEŻDŻAM NA STACJĘ I OTWIERAM DRZWI**\033[0m\n", train_ID);
 
         int pass_count = 0;  // Liczba pasażerów 
         int bike_count = 0;  // Liczba rowerów 
@@ -90,7 +90,8 @@ int main() {
 
         while ((pass_count < P && bike_count < R) && (time(NULL) - start_time < T || boarding_in_progress)) {
             if (force_departure || (time(NULL) - start_time >= T)) {
-                printf("[KIEROWNIK PID=%d] Czas T minął lub wymuszony odjazd! Oczekuję na zakończenie wsiadania.\n", train_ID);
+                printf("\033[1;32m[KIEROWNIK PID=%d] Czas T minął lub wymuszony odjazd! Oczekuję na zakończenie wsiadania.\033[0m\n", train_ID);
+                sleep(1); // Dodatkowe sprawdzenie przed zamknięciem drzwi
                 while (boarding_in_progress) sleep(1);
                 break;
             }
@@ -99,9 +100,9 @@ int main() {
                 if (receive_message_no_wait(get_message_queue(".", 0), 1, &msg) == 1) {
                     if (pass_count < P) {
                         boarding_in_progress = 1;
-                        printf("[KIEROWNIK] Pasażer PID=%ld zaczyna wsiadać (bez roweru).\n", msg.ktype);
+                        printf("\033[0;32m[KIEROWNIK] Pasażer PID=%ld zaczyna wsiadać (bez roweru).\033[0m\n", msg.ktype);
                         sleep(2);
-                        printf("[KIEROWNIK] Pasażer PID=%ld wsiadł (bez roweru).\n", msg.ktype);
+                        printf("\033[0;32m[KIEROWNIK] Pasażer PID=%ld wsiadł (bez roweru).\033[0m\n", msg.ktype);
                         passenger_pids[passenger_count++] = msg.ktype;
                         pass_count++;
                         boarding_in_progress = 0;
@@ -110,9 +111,9 @@ int main() {
                 if (receive_message_no_wait(get_message_queue(".", 1), 1, &msg) == 1) {
                     if (pass_count < P && bike_count < R) {
                         boarding_in_progress = 1;
-                        printf("[KIEROWNIK] Pasażer PID=%ld zaczyna wsiadać (z rowerem).\n", msg.ktype);
+                        printf("\033[0;32m[KIEROWNIK] Pasażer PID=%ld zaczyna wsiadać (z rowerem).\033[0m\n", msg.ktype);
                         sleep(2);
-                        printf("[KIEROWNIK] Pasażer PID=%ld wsiadł (z rowerem).\n", msg.ktype);
+                        printf("\033[0;32m[KIEROWNIK] Pasażer PID=%ld wsiadł (z rowerem).\033[0m\n", msg.ktype);
                         passenger_pids[passenger_count++] = msg.ktype;
                         pass_count++;
                         bike_count++;
@@ -122,14 +123,14 @@ int main() {
             }
         }
 
-        printf("[KIEROWNIK PID=%d] **ZAMYKAM DRZWI I ODJEŻDŻAM** (Liczba pasażerów: %d, rowerów: %d)\n", train_ID, pass_count, bike_count);
+        printf("\033[1;32m[KIEROWNIK PID=%d] **ZAMYKAM DRZWI I ODJEŻDŻAM** (Liczba pasażerów: %d, rowerów: %d)\033[0m\n", train_ID, pass_count, bike_count);
 
         // Powiadomienie zawiadowcy o odjeździe
         train_msg.mtype = 2;  // Typ komunikatu oznaczający odjazd
         send_message(arriving_train_msq, &train_msg);
 
         sleep(TI);  // Symulacja czasu jazdy pociągu
-        printf("[KIEROWNIK PID=%d] **DOJECHAŁEM – WRACAM NA STACJĘ**\n", train_ID);
+        printf("\033[1;32m[KIEROWNIK PID=%d] **DOJECHAŁEM – WRACAM NA STACJĘ**\033[0m\n", train_ID);
 
         // Oczyszczanie procesów pasażerów
         cleanup_passengers();
@@ -142,7 +143,6 @@ int main() {
         // Ponownie zgłoszenie chęci wjazdu
         train_msg.mtype = 1;  // Typ komunikatu oznaczający chęć wjazdu
         send_message(arriving_train_msq, &train_msg);
-        printf("[KIEROWNIK PID=%d] Czekam na pozwolenie od zawiadowcy...\n", train_ID);
     }
     return 0;
 }
