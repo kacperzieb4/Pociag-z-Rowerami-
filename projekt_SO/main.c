@@ -7,7 +7,6 @@ void cleanup() {
     system("pkill -SIGTERM kierownik");  // Wysłanie sygnału zakończenia do kierowników
     system("pkill -SIGTERM zawiadowca"); // Wysłanie sygnału zakończenia do zawiadowcy
     
-    
     // Usuwanie kolejek komunikatów
     destroy_message_queue(get_message_queue(".", 0));
     destroy_message_queue(get_message_queue(".", 1));
@@ -84,7 +83,6 @@ int main() {
     for (int i = 0; i < TP; i++) {
         pid_t pid_p = fork();
         if (pid_p == 0) {
-            printf("%d",i+1);
             execl("./pasazer", "pasazer", NULL);
             perror("execl pasazer");
             exit(1);
@@ -96,6 +94,6 @@ int main() {
     while (*killed_passengers < TP) {
         sleep(1);
     }
-
+    printf("[MASTER] Wszyscy pasazerowie dojechali do stacji końcowej. Kończę program.\n");
     cleanup();
 }

@@ -5,6 +5,7 @@ int force_departure = 0;  // Flaga wymuszająca odjazd pociągu
 int block_passengers = 0;  // Flaga blokująca wsiadanie pasażerów
 pid_t passenger_pids[P];  // Tablica przechowująca PIDy pasażerów w pociągu
 int passenger_count = 0;  // Liczba pasażerów w pociągu
+int boarding_in_progress = 0; // Flaga informująca o trwającym wsiadaniu
 
 
 void sigusr1_handler_kierownik(int sig) {
@@ -31,8 +32,8 @@ void cleanup_passengers() {
         if (passenger_pids[i] > 0) {
             if (kill(passenger_pids[i], SIGKILL) == 0) {
                 (*killed_passengers)++;
-                printf("[KIEROWNIK PID=%d] Pasażer PID=%d został zabity. Liczba zabitych: %d\n", 
-                        getpid(), passenger_pids[i], *killed_passengers);
+                printf("[KIEROWNIK PID=%d] Pasażer PID=%d dojechał do celu.\n", 
+                        getpid(), passenger_pids[i]);
             } else {
                 perror("kill");
             }
@@ -85,33 +86,37 @@ int main() {
         struct message msg;
         time_t start_time = time(NULL);
 
-        while ((pass_count < P && bike_count < R) && (time(NULL) - start_time < T || force_departure)) {
-            if (force_departure) {
-                printf("[KIEROWNIK PID=%d] Wymuszony odjazd! Przerywam wsiadanie pasażerów.\n", train_ID);
-                break;  // Natychmiastowe przerwanie wsiadania pasażerów
+        while ((pass_count < P && bike_count < R) && (time(NULL) - start_time < T || boarding_in_progress)) {
+            if (force_departure || (time(NULL) - start_time >= T)) {
+                printf("[KIEROWNIK PID=%d] Czas T minął lub wymuszony odjazd! Oczekuję na zakończenie wsiadania.\n", train_ID);
+                while (boarding_in_progress) sleep(1);
+                break;
             }
-            //blokowanie wsiadania pasazerów
-            if (block_passengers == 0){
-
-            if (receive_message_no_wait(get_message_queue(".", 0), 1, &msg) == 1) {
-                if (pass_count < P) {
-                    printf("[KIEROWNIK] Pasażer PID=%ld zaczyna wsiadać (bez roweru).\n", msg.ktype);
-                    sleep(2);
-                    printf("[KIEROWNIK] Pasażer PID=%ld wsiadł (bez roweru).\n", msg.ktype);
-                    passenger_pids[passenger_count++] = msg.ktype;
-                    pass_count++;
+            
+            if (block_passengers == 0 && !boarding_in_progress) {
+                if (receive_message_no_wait(get_message_queue(".", 0), 1, &msg) == 1) {
+                    if (pass_count < P) {
+                        boarding_in_progress = 1;
+                        printf("[KIEROWNIK] Pasażer PID=%ld zaczyna wsiadać (bez roweru).\n", msg.ktype);
+                        sleep(2);
+                        printf("[KIEROWNIK] Pasażer PID=%ld wsiadł (bez roweru).\n", msg.ktype);
+                        passenger_pids[passenger_count++] = msg.ktype;
+                        pass_count++;
+                        boarding_in_progress = 0;
+                    }
                 }
-            }
-            if (receive_message_no_wait(get_message_queue(".", 1), 1, &msg) == 1) {
-                if (pass_count < P && bike_count < R) {
-                    printf("[KIEROWNIK] Pasażer PID=%ld zaczyna wsiadać (z rowerem).\n", msg.ktype);
-                    sleep(2);
-                    printf("[KIEROWNIK] Pasażer PID=%ld wsiadł (z rowerem).\n", msg.ktype);
-                    passenger_pids[passenger_count++] = msg.ktype;
-                    pass_count++;
-                    bike_count++;
+                if (receive_message_no_wait(get_message_queue(".", 1), 1, &msg) == 1) {
+                    if (pass_count < P && bike_count < R) {
+                        boarding_in_progress = 1;
+                        printf("[KIEROWNIK] Pasażer PID=%ld zaczyna wsiadać (z rowerem).\n", msg.ktype);
+                        sleep(2);
+                        printf("[KIEROWNIK] Pasażer PID=%ld wsiadł (z rowerem).\n", msg.ktype);
+                        passenger_pids[passenger_count++] = msg.ktype;
+                        pass_count++;
+                        bike_count++;
+                        boarding_in_progress = 0;
+                    }
                 }
-            }
             }
         }
 
