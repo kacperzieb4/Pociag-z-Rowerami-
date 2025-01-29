@@ -18,18 +18,27 @@ void sigusr2_handler_kierownik(int sig) {
 
 }
 
+void sigterm_handler(int sig) {
+    printf("[PID=%d] Otrzymano SIGTERM, kończenie procesu...\n", getpid());
+    exit(0);
+}
+
 void cleanup_passengers() {
-    // Zabicie wszystkie procesy pasażerów w pociągu
+    int shm_id = shared_mem_get(".", 7);
+    int *killed_passengers = shared_mem_attach_int(shm_id);
+
     for (int i = 0; i < passenger_count; i++) {
         if (passenger_pids[i] > 0) {
             if (kill(passenger_pids[i], SIGKILL) == 0) {
-                printf("[KIEROWNIK PID=%d] Pasażer PID=%d został zabity.\n", getpid(), passenger_pids[i]);
+                (*killed_passengers)++;
+                printf("[KIEROWNIK PID=%d] Pasażer PID=%d został zabity. Liczba zabitych: %d\n", 
+                        getpid(), passenger_pids[i], *killed_passengers);
             } else {
                 perror("kill");
             }
         }
     }
-    passenger_count = 0;  // Reset liczby pasażerów
+    passenger_count = 0;
 }
 
 int main() {
@@ -42,11 +51,6 @@ int main() {
 
     int arriving_train_msq = get_message_queue(".", 2);  // Kolejka komunikatów dla przyjeżdżających pociągów
     int confirmation_msq = get_message_queue(".", 3);    // Kolejka komunikatów dla potwierdzeń
-
-    // Dodatkowy semafor do blokowania wsiadania pasażerów podczas odjazdu
-    int boarding_sem = sem_create(".", 7, 1);
-    sem_set_value(boarding_sem, 0, 1);  // Początkowo wsiadanie jest dozwolone
-
 
     struct message train_msg;
     train_msg.mtype = 1;  // Typ komunikatu oznaczający chęć wjazdu na stację
@@ -111,8 +115,6 @@ int main() {
             }
         }
 
-        // Blokowanie wsiadania pasażerów przed odjazdem
-        sem_wait(boarding_sem, 0);
         printf("[KIEROWNIK PID=%d] **ZAMYKAM DRZWI I ODJEŻDŻAM** (Liczba pasażerów: %d, rowerów: %d)\n", train_ID, pass_count, bike_count);
 
         // Powiadomienie zawiadowcy o odjeździe
@@ -126,9 +128,6 @@ int main() {
         cleanup_passengers();
 
         sleep(TI);  // Symulacja czasu powrotu pociągu
-
-        // Zwolnienie semafora po odjeździe
-        sem_raise(boarding_sem, 0);
 
         force_departure = 0;  // Resetowanie flagi wymuszonego odjazdu
         block_passengers = 0; // Resetowanie flagi blokującej wsiadanie pasażerów

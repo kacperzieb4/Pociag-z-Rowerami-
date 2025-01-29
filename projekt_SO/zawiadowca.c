@@ -16,6 +16,10 @@ void sigusr2_handler_zawiadowca(int sig) {
         printf("[ZAWIADOWCA] Wysłano sygnał 2 do pociągu PID=%d, aby zablokować wsiadanie pasażerów.\n", current_train_pid);
     }
 }
+void sigterm_handler(int sig) {
+    printf("[PID=%d] Otrzymano SIGTERM, kończenie procesu...\n", getpid());
+    exit(0);
+}
 
 int main() {
     setbuf(stdout, NULL);

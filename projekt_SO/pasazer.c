@@ -9,11 +9,11 @@ int main() {
     int has_bike = (rand() % 100 < 30) ? 1 : 0;  // Losowanie, czy pasażer ma rower
 
     if(has_bike == 1){
-        printf("[PASAZER PID=%d] Pojawienie się na peronie z rowerem.\n", my_pid);
+        printf("[PASAZER PID=%d] Pojawienie się na peronie (z rowerem).\n", my_pid);
     }
     else
     {
-        printf("[PASAZER PID=%d] Pojawienie się na peronie bez roweru.\n", my_pid);
+        printf("[PASAZER PID=%d] Pojawienie się na peronie (bez roweru).\n", my_pid);
     }
 
     struct message msg;

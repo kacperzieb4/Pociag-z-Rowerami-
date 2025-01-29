@@ -1,9 +1,13 @@
 #include "funkcje.h"
 #include "dane.h"
 
-void sigint_handler_main(int sig) {
-    printf("\n[MASTER] SIGINT - kończę i czyszczę zasoby.\n");
+void cleanup() {
+    printf("\n[MASTER] Sprzątanie zasobów.\n");
 
+    system("pkill -SIGTERM kierownik");  // Wysłanie sygnału zakończenia do kierowników
+    system("pkill -SIGTERM zawiadowca"); // Wysłanie sygnału zakończenia do zawiadowcy
+    
+    
     // Usuwanie kolejek komunikatów
     destroy_message_queue(get_message_queue(".", 0));
     destroy_message_queue(get_message_queue(".", 1));
@@ -14,8 +18,16 @@ void sigint_handler_main(int sig) {
     sem_destroy(sem_get(".", 5, 1)); // Peron
     sem_destroy(sem_get(".", 6, 1)); // Synchronizacja pociągów
 
+    //Usuwanie pamięci współdzielonej
+    shared_mem_destroy(shared_mem_get(".", 7));
+
     printf("[MASTER] Wszystkie zasoby zostały usunięte.\n");
     exit(0);
+}
+
+void sigint_handler_main(int sig) {
+    printf("\n[MASTER] SIGINT");
+    cleanup();
 }
 
 int main() {
@@ -38,6 +50,13 @@ int main() {
         exit(1);
     }
     sem_set_value(next_train_sem, 0, 1);  // Następny pociąg może wjechać (wartość 1)
+    
+    // Inicjalizacja pamięci współdzielonej dla liczby zabitych pasażerów
+    int shm_id = shared_mem_create(".", 7, sizeof(int));
+    int *killed_passengers = shared_mem_attach_int(shm_id);
+    *killed_passengers = 0;  // Inicjalizacja licznika
+    printf("%d",shared_mem_get(".", 7));
+
 
     // Uruchomienie zawiadowcy
     pid_t zawiadowca_pid = fork();
@@ -59,6 +78,8 @@ int main() {
         }
         sleep(1); 
     }
+
+
     // Uruchomienie procesów pasażerów
     for (int i = 0; i < TP; i++) {
         pid_t pid_p = fork();
@@ -71,8 +92,10 @@ int main() {
         usleep((rand() % 2000 + 500) * 1000);  // Losowe opóźnienie między pasażerami
     }
     
-    while (wait(NULL) > 0);  // Czekanie na zakończenie wszystkich procesów
+    // Monitorowanie liczby zabitych pasażerów
+    while (*killed_passengers < TP) {
+        sleep(1);
+    }
 
-    sigint_handler_main(SIGINT);
-    return 0;
+    cleanup();
 }
