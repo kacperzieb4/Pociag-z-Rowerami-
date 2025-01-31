@@ -1,8 +1,7 @@
 #include "funkcje.h"
 #include "dane.h"
-#include <pthread.h>
 
-void* start_kierownicy(void* arg) {
+void* start_kierownikow(void* arg) {
     for (int i = 0; i < N; i++) {
         pid_t kid = fork();
         if (kid == 0) {
@@ -23,7 +22,6 @@ void* start_pasazerowie(void* arg) {
             exit(1);
         }
         usleep((rand() % 2000 + 500) * 1000);
-        printf("%d",i+1);
     }
     return NULL;
 }
@@ -90,7 +88,7 @@ int main() {
     sleep(1);  // Czekanie, aby zawiadowca się uruchomił
     pthread_t kierownicy_thread, pasazerowie_thread;
     // Tworzenie wątków do równoczesnego uruchomienia procesów
-    pthread_create(&kierownicy_thread, NULL, start_kierownicy, NULL);
+    pthread_create(&kierownicy_thread, NULL, start_kierownikow, NULL);
     pthread_create(&pasazerowie_thread, NULL, start_pasazerowie, NULL);
 
     // Czekanie na zakończenie wątków

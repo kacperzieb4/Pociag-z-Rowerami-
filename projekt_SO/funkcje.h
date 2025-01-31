@@ -14,6 +14,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <time.h>
+#include <pthread.h>
 
 #define MSG_MAX 256
 
