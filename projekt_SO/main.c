@@ -1,6 +1,32 @@
 #include "funkcje.h"
 #include "dane.h"
+#include <pthread.h>
 
+void* start_kierownicy(void* arg) {
+    for (int i = 0; i < N; i++) {
+        pid_t kid = fork();
+        if (kid == 0) {
+            execl("./kierownik", "kierownik", NULL);
+            perror("execl kierownik");
+            exit(1);
+        }
+    }
+    return NULL;
+}
+
+void* start_pasazerowie(void* arg) {
+    for (int i = 0; i < TP; i++) {
+        pid_t pid_p = fork();
+        if (pid_p == 0) {
+            execl("./pasazer", "pasazer", NULL);
+            perror("execl pasazer");
+            exit(1);
+        }
+        usleep((rand() % 2000 + 500) * 1000);
+        printf("%d",i+1);
+    }
+    return NULL;
+}
 void cleanup() {
     printf("\033[1;34m[MASTER] Sprzątanie zasobów.\033[0m\n");
 
@@ -23,16 +49,14 @@ void cleanup() {
     printf("\033[1;34m[MASTER] Wszystkie zasoby zostały usunięte.\033[0m\n");
     exit(0);
 }
-
 void sigint_handler_main(int sig) {
-    printf("\n\033[1;34m[MASTER] SIGINT\033[0m\n");
+    printf("\n\033[1;34m[MASTER] SIGINT \033[0m\n");
     cleanup();
 }
 
 int main() {
     setbuf(stdout, NULL);
     signal(SIGINT, sigint_handler_main);  // Rejestracja sygnału SIGINT
-    
     printf("\033[1;34m[MASTER] Start programu. Tworzenie procesów.\033[0m\n");
 
     // Inicjalizacja semaforów
@@ -55,7 +79,6 @@ int main() {
     int *killed_passengers = shared_mem_attach_int(shm_id);
     *killed_passengers = 0;  // Inicjalizacja licznika
 
-
     // Uruchomienie zawiadowcy
     pid_t zawiadowca_pid = fork();
     if (zawiadowca_pid == 0) {
@@ -65,32 +88,15 @@ int main() {
     }
 
     sleep(1);  // Czekanie, aby zawiadowca się uruchomił
+    pthread_t kierownicy_thread, pasazerowie_thread;
+    // Tworzenie wątków do równoczesnego uruchomienia procesów
+    pthread_create(&kierownicy_thread, NULL, start_kierownicy, NULL);
+    pthread_create(&pasazerowie_thread, NULL, start_pasazerowie, NULL);
 
-    // Uruchomienie procesów kierowników
-    for (int i = 0; i < N; i++) {
-        pid_t kid = fork();
-        if (kid == 0) {
-            execl("./kierownik", "kierownik", NULL);
-            perror("execl kierownik");
-            exit(1);
-        }
-        sleep(1); 
-    }
+    // Czekanie na zakończenie wątków
+    pthread_join(kierownicy_thread, NULL);
+    pthread_join(pasazerowie_thread, NULL);
 
-    sleep(1);
-
-    // Uruchomienie procesów pasażerów
-    for (int i = 0; i < TP; i++) {
-        pid_t pid_p = fork();
-        if (pid_p == 0) {
-            execl("./pasazer", "pasazer", NULL);
-            perror("execl pasazer");
-            exit(1);
-        }
-        usleep((rand() % 2000 + 500) * 1000);  // Losowe opóźnienie między pasażerami
-
-    }
-    
     // Monitorowanie liczby zabitych pasażerów
     while (*killed_passengers < TP) {
         sleep(1);

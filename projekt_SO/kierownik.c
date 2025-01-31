@@ -7,7 +7,6 @@ pid_t passenger_pids[P];  // Tablica przechowująca PIDy pasażerów w pociągu
 int passenger_count = 0;  // Liczba pasażerów w pociągu
 int boarding_in_progress = 0; // Flaga informująca o trwającym wsiadaniu
 
-
 void sigusr1_handler_kierownik(int sig) {
     force_departure = 1;  // Ustawianie flagi wymuszonego odjazdu
     printf("\033[1;32m[KIEROWNIK PID=%d] Otrzymano sygnał wymuszający odjazd.\033[0m\n", getpid());
@@ -16,7 +15,6 @@ void sigusr1_handler_kierownik(int sig) {
 void sigusr2_handler_kierownik(int sig) {
     block_passengers = 1; // Ustawianie flagi blokującej wsiadanie pasażerów
     printf("\033[1;32m[KIEROWNIK PID=%d] Otrzymano sygnał blokujący wsiadanie pasażerów.\033[0m\n", getpid());
-
 }
 
 void sigterm_handler(int sig) {
@@ -39,6 +37,8 @@ void cleanup_passengers() {
             }
         }
     }
+    // Resetowanie tablicy pasażerów
+    memset(passenger_pids, 0, sizeof(passenger_pids));
     passenger_count = 0;
 }
 
@@ -47,7 +47,6 @@ int main() {
     signal(SIGUSR1, sigusr1_handler_kierownik);  // Rejestracja sygnału 1
     signal(SIGUSR2, sigusr2_handler_kierownik);  // Rejestracja sygnału 2
     signal(SIGTERM, sigterm_handler); // Rejestracja sygnału końcowego 
-
 
     pid_t train_ID = getpid();  // PID bieżącego pociągu
     printf("\033[1;32m[KIEROWNIK PID=%d] Start pociągu.\033[0m\n", train_ID);
@@ -82,27 +81,19 @@ int main() {
         }
 
         printf("\033[1;32m[KIEROWNIK PID=%d] **WJEŻDŻAM NA STACJĘ I OTWIERAM DRZWI**\033[0m\n", train_ID);
-
         int pass_count = 0;  // Liczba pasażerów 
         int bike_count = 0;  // Liczba rowerów 
         struct message msg;
         time_t start_time = time(NULL);
 
-        while ((pass_count < P && bike_count < R) && (time(NULL) - start_time < T || boarding_in_progress)) {
-            if (force_departure || (time(NULL) - start_time >= T)) {
-                printf("\033[1;32m[KIEROWNIK PID=%d] Czas T minął lub wymuszony odjazd! Oczekuję na zakończenie wsiadania.\033[0m\n", train_ID);
-                sleep(1); // Dodatkowe sprawdzenie przed zamknięciem drzwi
-                while (boarding_in_progress) sleep(1);
-                break;
-            }
-            
+        while ((time(NULL) - start_time < T) && !force_departure) {
             if (block_passengers == 0 && !boarding_in_progress) {
                 if (receive_message_no_wait(get_message_queue(".", 0), 1, &msg) == 1) {
                     if (pass_count < P) {
                         boarding_in_progress = 1;
-                        printf("\033[0;32m[KIEROWNIK] Pasażer PID=%ld zaczyna wsiadać (bez roweru).\033[0m\n", msg.ktype);
+                        printf("\033[0;32m[KIEROWNIK=%d] Pasażer PID=%ld zaczyna wsiadać (bez roweru).\033[0m\n",train_ID, msg.ktype);
                         sleep(2);
-                        printf("\033[0;32m[KIEROWNIK] Pasażer PID=%ld wsiadł (bez roweru).\033[0m\n", msg.ktype);
+                        printf("\033[0;32m[KIEROWNIK=%d] Pasażer PID=%ld wsiadł (bez roweru).\033[0m\n",train_ID, msg.ktype);
                         passenger_pids[passenger_count++] = msg.ktype;
                         pass_count++;
                         boarding_in_progress = 0;
@@ -111,9 +102,9 @@ int main() {
                 if (receive_message_no_wait(get_message_queue(".", 1), 1, &msg) == 1) {
                     if (pass_count < P && bike_count < R) {
                         boarding_in_progress = 1;
-                        printf("\033[0;32m[KIEROWNIK] Pasażer PID=%ld zaczyna wsiadać (z rowerem).\033[0m\n", msg.ktype);
+                        printf("\033[0;32m[KIEROWNIK=%d] Pasażer PID=%ld zaczyna wsiadać (z rowerem).\033[0m\n",train_ID, msg.ktype);
                         sleep(2);
-                        printf("\033[0;32m[KIEROWNIK] Pasażer PID=%ld wsiadł (z rowerem).\033[0m\n", msg.ktype);
+                        printf("\033[0;32m[KIEROWNIK=%d] Pasażer PID=%ld wsiadł (z rowerem).\033[0m\n",train_ID, msg.ktype);
                         passenger_pids[passenger_count++] = msg.ktype;
                         pass_count++;
                         bike_count++;
