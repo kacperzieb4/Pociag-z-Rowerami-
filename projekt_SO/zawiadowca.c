@@ -7,6 +7,8 @@ void sigusr1_handler_zawiadowca(int sig) {
     if (current_train_pid != -1) {
         kill(current_train_pid, SIGUSR1);  // Wysyłanie sygnału 1 do pociągu
         printf("\033[1;33m[ZAWIADOWCA] Wysłano sygnał 1 do pociągu PID=%d, aby wymusić odjazd.\033[0m\n", current_train_pid);
+    } else {
+        printf("\033[1;33m[ZAWIADOWCA] Brak pociągu na stacji, sygnał 1 zignorowany.\033[0m\n");
     }
 }
 
@@ -21,7 +23,7 @@ void sigterm_handler(int sig) {
     exit(0);
 }
 
-int main() {
+ int main() {
     setbuf(stdout, NULL);
     signal(SIGUSR1, sigusr1_handler_zawiadowca);  // Rejestracja sygnału 1
     signal(SIGUSR2, sigusr2_handler_zawiadowca);  // Rejestracja sygnału 2

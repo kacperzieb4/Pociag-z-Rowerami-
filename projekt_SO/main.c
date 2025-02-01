@@ -1,6 +1,7 @@
 #include "funkcje.h"
 #include "dane.h"
 
+
 void* start_kierownikow(void* arg) {
     for (int i = 0; i < N; i++) {
         pid_t kid = fork();
@@ -95,7 +96,7 @@ int main() {
     pthread_join(kierownicy_thread, NULL);
     pthread_join(pasazerowie_thread, NULL);
 
-    // Monitorowanie liczby zabitych pasażerów
+    // Monitorowanie liczby zabitych(rozwiezionych) pasażerów
     while (*killed_passengers < TP) {
         sleep(1);
     }

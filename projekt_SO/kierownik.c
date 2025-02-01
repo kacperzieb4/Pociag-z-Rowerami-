@@ -40,6 +40,7 @@ void cleanup_passengers() {
     // Resetowanie tablicy pasażerów
     memset(passenger_pids, 0, sizeof(passenger_pids));
     passenger_count = 0;
+    printf("\033[;35m[KIEROWNIK PID=%d] Wszyscy pasażerowie zostali usunięci.\033[0m\n", getpid());
 }
 
 int main() {
@@ -71,7 +72,7 @@ int main() {
             if (receive_message(confirmation_msq, train_ID, &confirmation_msg) == 1) {
                 received = 1;
             } else {
-                sleep(1);  // Czekanie na odpowiedź
+                sleep(1); // Czekanie na odpowiedź
             }
         }
 
