@@ -12,6 +12,7 @@ void* start_kierownikow(void* arg) {
     }
     return NULL;
 }
+
 void* start_pasazerowie(void* arg) {
     for (int i = 0; i < TP; i++) {
         pid_t pid_p = fork();
@@ -24,6 +25,7 @@ void* start_pasazerowie(void* arg) {
     }
     return NULL;
 }
+
 
 void cleanup() {
     printf("\033[1;34m[MASTER] Sprzątanie zasobów.\033[0m\n");
