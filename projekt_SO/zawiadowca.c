@@ -39,7 +39,6 @@ int main() {
         // Czekanie na zgłoszenie się pociągu
         if (receive_message(arriving_train_msq, 1, &train_msg) > 0) {
             
-            
             long train_ID = train_msg.ktype;
             current_train_pid = train_ID;  // Zapis PID pociągu na stacji
             printf("\033[1;33m[ZAWIADOWCA] Pociąg PID=%ld zgłasza chęć wjazdu na stację.\033[0m\n", train_ID);
@@ -62,7 +61,7 @@ int main() {
                     current_train_pid = -1;  // Reset PIDu pociągu
                     break;
                 }
-                //sleep(1);  // Symulacja oczekiwania na odjazd
+                sleep(1);  // Symulacja oczekiwania na odjazd
             }
 
             // Zwolnienie peronu
