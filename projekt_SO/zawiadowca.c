@@ -7,8 +7,6 @@ void sigusr1_handler_zawiadowca(int sig) {
     if (current_train_pid != -1) {
         kill(current_train_pid, SIGUSR1);  // Wysyłanie sygnału 1 do pociągu
         printf("\033[1;33m[ZAWIADOWCA] Wysłano sygnał 1 do pociągu PID=%d, aby wymusić odjazd.\033[0m\n", current_train_pid);
-    } else {
-        printf("\033[1;33m[ZAWIADOWCA] Brak pociągu na stacji, sygnał 1 zignorowany.\033[0m\n");
     }
 }
 
@@ -23,7 +21,7 @@ void sigterm_handler(int sig) {
     exit(0);
 }
 
- int main() {
+int main() {
     setbuf(stdout, NULL);
     signal(SIGUSR1, sigusr1_handler_zawiadowca);  // Rejestracja sygnału 1
     signal(SIGUSR2, sigusr2_handler_zawiadowca);  // Rejestracja sygnału 2
@@ -40,6 +38,8 @@ void sigterm_handler(int sig) {
     while (1) {
         // Czekanie na zgłoszenie się pociągu
         if (receive_message(arriving_train_msq, 1, &train_msg) > 0) {
+            
+            
             long train_ID = train_msg.ktype;
             current_train_pid = train_ID;  // Zapis PID pociągu na stacji
             printf("\033[1;33m[ZAWIADOWCA] Pociąg PID=%ld zgłasza chęć wjazdu na stację.\033[0m\n", train_ID);
@@ -62,7 +62,7 @@ void sigterm_handler(int sig) {
                     current_train_pid = -1;  // Reset PIDu pociągu
                     break;
                 }
-                sleep(1);  // Symulacja oczekiwania na odjazd
+                //sleep(1);  // Symulacja oczekiwania na odjazd
             }
 
             // Zwolnienie peronu
