@@ -32,7 +32,6 @@ void cleanup_passengers() {
         if (passenger_pids[i] > 0) {
             if (kill(passenger_pids[i], SIGKILL) == 0) {
                 (*killed_passengers)++;
-                printf("%d", *killed_passengers);
                 printf("\033[;35m[KIEROWNIK PID=%d] Pasażer PID=%d dojechał do celu.\033[0m\n", 
                         getpid(), passenger_pids[i]);
             } else {
@@ -150,6 +149,5 @@ int main() {
         train_msg.mtype = 1;  // Typ komunikatu oznaczający chęć wjazdu
         send_message(arriving_train_msq, &train_msg);
     }
-    
     return 0;
 }

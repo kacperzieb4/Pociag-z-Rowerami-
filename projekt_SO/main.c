@@ -16,7 +16,6 @@ void* start_pasazerowie(void* arg) {
     for (int i = 0; i < TP; i++) {
         pid_t pid_p = fork();
         if (pid_p == 0) {
-            printf("%d", i+1);
             execl("./pasazer", "pasazer", NULL);
             perror("execl pasazer");
             exit(1);
@@ -25,6 +24,7 @@ void* start_pasazerowie(void* arg) {
     }
     return NULL;
 }
+
 void cleanup() {
     printf("\033[1;34m[MASTER] Sprzątanie zasobów.\033[0m\n");
 
