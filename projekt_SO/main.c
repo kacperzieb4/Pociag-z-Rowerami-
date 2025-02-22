@@ -12,7 +12,6 @@ void* start_kierownikow(void* arg) {
     }
     return NULL;
 }
-
 void* start_pasazerowie(void* arg) {
     for (int i = 0; i < TP; i++) {
         pid_t pid_p = fork();
@@ -25,8 +24,22 @@ void* start_pasazerowie(void* arg) {
     }
     return NULL;
 }
+void* cleanup_passengers_main(void* arg) {
+    int cleanup_msq = get_message_queue(".", 4);
+    struct message msg;
 
-
+    while (1) {
+        if (receive_message(cleanup_msq, 1, &msg) == 1) {
+            pid_t passenger_pid = msg.ktype;
+            if (kill(passenger_pid, SIGKILL) == 0) {
+                printf("\033[;35mPasażer PID=%d dojechał do celu.\033[0m\n", passenger_pid);
+                waitpid(passenger_pid, NULL, 0);  // Zapobieganie zombie
+            }
+        }
+        usleep(1000);
+    }
+    return NULL;
+}
 void cleanup() {
     printf("\033[1;34m[MASTER] Sprzątanie zasobów.\033[0m\n");
 
@@ -38,6 +51,7 @@ void cleanup() {
     destroy_message_queue(get_message_queue(".", 1));
     destroy_message_queue(get_message_queue(".", 2));
     destroy_message_queue(get_message_queue(".", 3));
+    destroy_message_queue(get_message_queue(".", 4));
 
     // Usuwanie semaforów
     sem_destroy(sem_get(".", 5, 1)); // Peron
@@ -88,10 +102,12 @@ int main() {
     }
 
     sleep(1);  // Czekanie, aby zawiadowca się uruchomił
-    pthread_t kierownicy_thread, pasazerowie_thread;
+    pthread_t kierownicy_thread, pasazerowie_thread, cleanup_thread;
     // Tworzenie wątków do równoczesnego uruchomienia procesów
     pthread_create(&kierownicy_thread, NULL, start_kierownikow, NULL);
     pthread_create(&pasazerowie_thread, NULL, start_pasazerowie, NULL);
+    pthread_create(&cleanup_thread, NULL, cleanup_passengers_main, NULL);
+
 
     // Czekanie na zakończenie wątków
     pthread_join(kierownicy_thread, NULL);
@@ -103,4 +119,4 @@ int main() {
     }
     printf("\033[1;34m[MASTER] Wszyscy pasazerowie dojechali do stacji końcowej. Kończę program.\033[0m\n");
     cleanup();
-}
+} 

@@ -1,9 +1,10 @@
 #include "funkcje.h"
 #include "dane.h"
 
+
 int main() {
     setbuf(stdout, NULL);
-    
+
     pid_t my_pid = getpid();  // PID bieżącego pasażera
     srand(my_pid);
     int has_bike = (rand() % 100 < 30) ? 1 : 0;  // Losowanie, czy pasażer ma rower
@@ -26,7 +27,7 @@ int main() {
     }
 
     send_message(q, &msg);  // Wysyłanie zgłoszenia do kolejki
-
+    
     pause();  // Czekanie na sygnał zakończenia
     return 0;
 }
