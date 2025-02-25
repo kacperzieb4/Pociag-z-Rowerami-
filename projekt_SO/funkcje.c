@@ -45,6 +45,8 @@ int receive_message_no_wait(int msq_ID, long msgtype, struct message *msg) {
     if (msgrcv(msq_ID, msg, sizeof(*msg) - sizeof(long), msgtype, IPC_NOWAIT) == -1) {
         if (errno == ENOMSG) {
             return 0;
+        } else if (errno == EIDRM) {
+            return -1;
         } else {
             perror("msgrcv receive_message_no_wait");
             return -1;
@@ -52,6 +54,7 @@ int receive_message_no_wait(int msq_ID, long msgtype, struct message *msg) {
     }
     return 1;
 }
+
 
 //Semafory
 int sem_create(char* unique_path, int project_name, int nsems) {

@@ -47,11 +47,12 @@ int main() {
             sem_wait(platform_sem, 0);
 
             // Wysłanie potwierdzenie do pociągu
+            printf("\033[1;33m[ZAWIADOWCA] Zezwalam pociągowi PID=%ld na wjazd na stację.\033[0m\n", train_ID);
             struct message confirmation_msg;
             confirmation_msg.mtype = train_ID;  // Użycie PIDu pociągu jako typu komunikatu
             confirmation_msg.ktype = 1;         // Potwierdzenie
             send_message(confirmation_msq, &confirmation_msg);
-            printf("\033[1;33m[ZAWIADOWCA] Zezwalam pociągowi PID=%ld na wjazd na stację.\033[0m\n", train_ID);
+            
 
             // Czekanie na odjazd pociągu
             while (1) {

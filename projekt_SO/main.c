@@ -20,7 +20,6 @@ void* start_kierownikow(void* arg) {
     }
     return NULL;
 }
-
 void* start_pasazerowie(void* arg) {
     int created_passengers = 0;
     for (int i = 0; i < TP; i++) {
@@ -44,18 +43,21 @@ void* start_pasazerowie(void* arg) {
 
 // Inicjalizacja pamięci dla liczby zabitych pasażerów
 int killed_passengers = 0;
-
 void* cleanup_passengers_main(void* arg) {
     int cleanup_msq = get_message_queue(".", 4);
     struct message msg;
 
     while (killed_passengers < TP) {
-        if (receive_message(cleanup_msq, 1, &msg) == 1) {
+        int result = receive_message_no_wait(cleanup_msq, 1, &msg);
+        if (result == -1) { 
+            // Jeśli kolejka została usunięta, kończymy wątek
+            break;
+        } else if (result == 1) {
             pid_t passenger_pid = msg.ktype;
             if (kill(passenger_pid, SIGKILL) == 0) {
                 printf("\033[;35mPasażer PID=%d dojechał do celu.\033[0m\n", passenger_pid);
                 killed_passengers++;
-                waitpid(passenger_pid, NULL, 0);  // Zapobieganie zombie
+                waitpid(passenger_pid, NULL, 0); // Zapobieganie zombie
             }
         }
         usleep(1000);
@@ -63,10 +65,12 @@ void* cleanup_passengers_main(void* arg) {
     return NULL;
 }
 
+
 void cleanup() {
     printf("\033[1;34m[MASTER] Sprzątanie zasobów.\033[0m\n");
 
     system("pkill -SIGTERM kierownik");  // Wysłanie sygnału zakończenia do kierowników
+    system("pkill -SIGKILL pasazer");    // Zabijanie pasażerów
     system("pkill -SIGTERM zawiadowca"); // Wysłanie sygnału zakończenia do zawiadowcy
     
     // Usuwanie kolejek komunikatów
@@ -93,7 +97,7 @@ int main() {
     setbuf(stdout, NULL);
     signal(SIGINT, sigint_handler_main);  // Rejestracja sygnału SIGINT
     printf("\033[1;34m[MASTER] Start programu. Tworzenie procesów.\033[0m\n");
-
+    
     // Inicjalizacja semaforów
     int platform_sem = sem_create(".", 5, 1);  // Semafor peronu
     if (platform_sem == -1) {
@@ -153,4 +157,7 @@ int main() {
     }
     printf("\033[1;34m[MASTER] Wszyscy pasazerowie dojechali do stacji końcowej. Kończę program.\033[0m\n");
     cleanup();
+
+    return 0;
+    
 }

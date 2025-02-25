@@ -18,7 +18,6 @@ void sigusr2_handler_kierownik(int sig) {
     printf("\033[1;32m[KIEROWNIK PID=%d] Otrzymano sygnał blokujący wsiadanie pasażerów.\033[0m\n", getpid());
 
 }
-
 void sigterm_handler(int sig) {
     printf("\033[1;32m[KIEROWNIK PID=%d] Otrzymano SIGTERM, kończenie procesu.\033[0m\n", getpid());
     exit(0);
@@ -97,9 +96,9 @@ int main() {
             // receive_message_no_wait jest naszą funkcją do msgrcv(..., IPC_NOWAIT)
             if (receive_message_no_wait(get_message_queue(".", 0), 1, &msg_no_bike) == 1) {
                 boarding_in_progress = 1;
-                printf("\033[0;32m[KIEROWNIK=%d] Pasażer PID=%ld zaczyna wsiadać (bez roweru).\033[0m\n",train_ID, msg_no_bike.ktype);
+                printf("\033[0;32m[KIEROWNIK PID=%d] Pasażer PID=%ld zaczyna wsiadać (bez roweru).\033[0m\n",train_ID, msg_no_bike.ktype);
                 sleep(2);
-                printf("\033[0;32m[KIEROWNIK=%d] Pasażer PID=%ld wsiadł (bez roweru).\033[0m\n",train_ID, msg_no_bike.ktype);     
+                printf("\033[0;32m[KIEROWNIK PID=%d] Pasażer PID=%ld wsiadł (bez roweru).\033[0m\n",train_ID, msg_no_bike.ktype);     
                 passenger_pids[passenger_count++] = msg_no_bike.ktype;
                 pass_count++;
                 boarding_in_progress = 0;
@@ -110,9 +109,9 @@ int main() {
         struct message msg_bike;
             if (receive_message_no_wait(get_message_queue(".", 1), 1, &msg_bike) == 1) {
                 boarding_in_progress = 1;
-                printf("\033[0;32m[KIEROWNIK=%d] Pasażer PID=%ld zaczyna wsiadać (z rowerem).\033[0m\n",train_ID, msg_bike.ktype);
+                printf("\033[0;32m[KIEROWNIK PID=%d] Pasażer PID=%ld zaczyna wsiadać (z rowerem).\033[0m\n",train_ID, msg_bike.ktype);
                 sleep(2);
-                printf("\033[0;32m[KIEROWNIK=%d] Pasażer PID=%ld wsiadł (z rowerem).\033[0m\n",train_ID, msg_bike.ktype);
+                printf("\033[0;32m[KIEROWNIK PID=%d] Pasażer PID=%ld wsiadł (z rowerem).\033[0m\n",train_ID, msg_bike.ktype);
                 passenger_pids[passenger_count++] = msg_bike.ktype;
                 pass_count++;
                 bike_count++;
